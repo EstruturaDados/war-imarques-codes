@@ -1,59 +1,130 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 // ================= STRUCT =================
 
-// Struct que representa um território
 typedef struct {
     char nome[30];
     char cor[10];
     int tropas;
 } Territorio;
 
-// ================= FUNÇÃO PRINCIPAL =================
+// ================= CADASTRO =================
+
+void cadastrarTerritorios(Territorio *t, int n) {
+    for (int i = 0; i < n; i++) {
+        printf("\n=== Cadastro do Territorio %d ===\n", i + 1);
+
+        printf("Nome: ");
+        fgets(t[i].nome, 30, stdin);
+        t[i].nome[strcspn(t[i].nome, "\n")] = '\0';
+
+        printf("Cor do exercito: ");
+        fgets(t[i].cor, 10, stdin);
+        t[i].cor[strcspn(t[i].cor, "\n")] = '\0';
+
+        printf("Numero de tropas: ");
+        scanf("%d", &t[i].tropas);
+        getchar(); // limpa buffer
+    }
+}
+
+// ================= EXIBIÇÃO =================
+
+void mostrarTerritorios(Territorio *t, int n) {
+    printf("\n===== MAPA ATUAL =====\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("\n[%d] %s\n", i + 1, t[i].nome);
+        printf("Cor: %s\n", t[i].cor);
+        printf("Tropas: %d\n", t[i].tropas);
+    }
+}
+
+// ================= BATALHA =================
+
+void batalhar(Territorio *t, int atacante, int defensor) {
+
+    // Gerar "dados" aleatórios (1 a 6)
+    int dadoAtaque = rand() % 6 + 1;
+    int dadoDefesa = rand() % 6 + 1;
+
+    printf("\n=== BATALHA ===\n");
+    printf("Atacante (%s) tirou: %d\n", t[atacante].nome, dadoAtaque);
+    printf("Defensor (%s) tirou: %d\n", t[defensor].nome, dadoDefesa);
+
+    if (dadoAtaque > dadoDefesa) {
+        printf(">>> Ataque venceu!\n");
+        t[defensor].tropas--;
+
+        if (t[defensor].tropas <= 0) {
+            printf(">>> Territorio conquistado!\n");
+
+            // Transferir domínio (cor)
+            strcpy(t[defensor].cor, t[atacante].cor);
+            t[defensor].tropas = 1;
+        }
+
+    } else if (dadoDefesa > dadoAtaque) {
+        printf(">>> Defesa venceu!\n");
+        t[atacante].tropas--;
+
+    } else {
+        printf(">>> Empate! Nenhuma perda.\n");
+    }
+}
+
+// ================= MAIN =================
 
 int main() {
 
-    // Vetor para armazenar 5 territórios
-    Territorio territorios[5];
+    int n = 5;
 
-    // ================= ENTRADA DE DADOS =================
+    // Alocação dinâmica com calloc
+    Territorio *territorios = (Territorio*) calloc(n, sizeof(Territorio));
 
-    for (int i = 0; i < 5; i++) {
+    if (territorios == NULL) {
+        printf("Erro de memoria!\n");
+        return 1;
+    }
 
-        printf("\n=== Cadastro do Territorio %d ===\n", i + 1);
+    srand(time(NULL));
 
-        // Leitura do nome (fgets permite espaços)
-        printf("Digite o nome do territorio: ");
-        fgets(territorios[i].nome, 30, stdin);
+    cadastrarTerritorios(territorios, n);
 
-        // Remover o '\n' do final da string
-        territorios[i].nome[strcspn(territorios[i].nome, "\n")] = '\0';
+    int atacante, defensor;
+    char continuar;
 
-        // Leitura da cor do exército
-        printf("Digite a cor do exercito: ");
-        fgets(territorios[i].cor, 10, stdin);
-        territorios[i].cor[strcspn(territorios[i].cor, "\n")] = '\0';
+    do {
+        mostrarTerritorios(territorios, n);
 
-        // Leitura do número de tropas
-        printf("Digite a quantidade de tropas: ");
-        scanf("%d", &territorios[i].tropas);
+        printf("\nEscolha o territorio atacante (1-5): ");
+        scanf("%d", &atacante);
 
-        // Limpa o buffer do teclado (IMPORTANTE após scanf)
+        printf("Escolha o territorio defensor (1-5): ");
+        scanf("%d", &defensor);
+
+        // Ajustar índice (usuário começa em 1)
+        atacante--;
+        defensor--;
+
+        // Validação básica
+        if (atacante < 0 || atacante >= n || defensor < 0 || defensor >= n || atacante == defensor) {
+            printf("Escolha invalida!\n");
+        } else {
+            batalhar(territorios, atacante, defensor);
+        }
+
+        printf("\nDeseja continuar? (s/n): ");
+        scanf(" %c", &continuar);
         getchar();
-    }
 
-    // ================= SAÍDA DE DADOS =================
+    } while (continuar == 's');
 
-    printf("\n\n===== MAPA DE TERRITORIOS =====\n");
-
-    for (int i = 0; i < 5; i++) {
-
-        printf("\nTerritorio %d\n", i + 1);
-        printf("Nome: %s\n", territorios[i].nome);
-        printf("Cor do exercito: %s\n", territorios[i].cor);
-        printf("Tropas: %d\n", territorios[i].tropas);
-    }
+    // Liberar memória
+    free(territorios);
 
     return 0;
 }
